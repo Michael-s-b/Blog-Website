@@ -2,6 +2,15 @@ import express from "express";
 import bodyParser from "body-parser";
 import ejs from "ejs";
 import path from "path";
+import { postTitleToURL } from "./global";
+import { truncateString } from "./global";
+
+interface Post {
+	title: string;
+	text: string;
+}
+// const posts: Post[] = [];
+const postsMap: Map<string, Post> = new Map();
 
 const homeStartingContent =
 	"Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
@@ -17,8 +26,46 @@ app.use(express.static(path.join(__dirname, "/public"))); //everything on public
 app.set("view engine", "ejs"); //setting the view engine of the application to ejs.
 app.set("views", path.join(__dirname, "/views")); // setting the app to look for the views dir on the correct dir
 //--------------------------------------
+//Home page
 app.get("/", (req, res) => {
-	res.render("home", { homeContent: homeStartingContent });
+	res.render("home", {
+		homeStartingContent: homeStartingContent,
+		posts: postsMap,
+		truncateString: truncateString,
+		postTitleToURL: postTitleToURL,
+	});
+});
+//About page
+app.get("/about", (req, res) => {
+	res.render("about", { aboutContent: aboutContent });
+});
+//Contact page
+app.get("/contact", (req, res) => {
+	res.render("contact", { contactContent: contactContent });
+});
+//Compose page
+app.get("/compose", (req, res) => {
+	res.render("compose");
+});
+app.post("/compose", (req, res) => {
+	const newPost: Post = {
+		title: req.body.postTitle,
+		text: req.body.postText,
+	};
+	postsMap.set(postTitleToURL(newPost.title), newPost);
+	// posts.push(newPost);
+	console.log(postsMap);
+
+	res.redirect("/");
+});
+//Posts routing
+app.get("/posts/:postID", (req, res) => {
+	console.log(req.params.postID);
+	if (postsMap.has(req.params.postID)) {
+		res.render("post", { post: postsMap.get(req.params.postID) });
+	} else {
+		res.render("error404");
+	}
 });
 //--------------------------------------
 // server listening on port 3000
