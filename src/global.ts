@@ -1,14 +1,27 @@
-//converts the post title to a url friendly string. eg. "My First Post" becomes "my-first-post"
-export function postTitleToURL(title: string): string {
-	title = title.replaceAll(" ", "-");
-	title = title.toLowerCase();
-	return title;
+import mongoose, { model, Types } from "mongoose";
+
+// mongoose models and schemas
+// 1. Create an interface representing a document in MongoDB.
+export interface Post {
+	_id: Types.ObjectId;
+	title: string;
+	text: string;
 }
-//truncates a string{str} to the specified length{num} and appends "..." to the end.
-export function truncateString(str: string, num: number): string {
-	if (str.length > num) {
-		return str.slice(0, num) + " ...";
-	} else {
-		return str;
-	}
-}
+// 2. Create a Schema corresponding to the document interface.
+
+export const postSchema = new mongoose.Schema({
+	_id: {
+		type: mongoose.Schema.Types.ObjectId,
+		required: true,
+	},
+	title: {
+		type: String,
+		required: true,
+	},
+	text: {
+		type: String,
+		required: true,
+	},
+});
+// 3. Create a Model.
+export const Post = model<Post>("Post", postSchema);

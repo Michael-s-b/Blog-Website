@@ -10,8 +10,8 @@
             <%= post.title %>
         </h1>
         <p>
-            <%= truncateString(post.text, 100)%>
-                <a href="/posts/<%= postTitleToURL(post.title) %> "> Read more</a>
+            <%= truncate(post.text, { length: 100, omission: '...' })%>
+                <a href="/posts/<%= post._id.toString() %> "> Read more</a>
         </p>
 
         <% }) %>

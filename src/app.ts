@@ -1,17 +1,19 @@
 import express from "express";
 import bodyParser from "body-parser";
 import ejs from "ejs";
+import _ from "lodash";
 import path from "path";
-import { postTitleToURL } from "./global";
-import { truncateString } from "./global";
+import { Post, postSchema } from "./global";
+import mongoose, { CallbackError } from "mongoose";
+import { mongoDbAuth } from "./secret"; //user and password for authentication in the MongoDB connection
+mongoose.set("strictQuery", false);
+mongoose.connect(
+	`mongodb+srv://${mongoDbAuth}@cluster0.vpaodoy.mongodb.net/blogpostDB`
+);
 
-interface Post {
-	title: string;
-	text: string;
-}
-// const posts: Post[] = [];
-const postsMap: Map<string, Post> = new Map();
-
+// // const posts: Post[] = [];
+// const postsMap: Map<string, Post> = new Map();
+let posts: Post[] = [];
 const homeStartingContent =
 	"Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
 const aboutContent =
@@ -28,11 +30,17 @@ app.set("views", path.join(__dirname, "/views")); // setting the app to look for
 //--------------------------------------
 //Home page
 app.get("/", (req, res) => {
-	res.render("home", {
-		homeStartingContent: homeStartingContent,
-		posts: postsMap,
-		truncateString: truncateString,
-		postTitleToURL: postTitleToURL,
+	Post.find({}, (error: CallbackError, data: Post[]) => {
+		if (error) {
+			console.log(error);
+		} else {
+			posts = data;
+			res.render("home", {
+				homeStartingContent: homeStartingContent,
+				posts: posts,
+				truncate: _.truncate,
+			});
+		}
 	});
 });
 //About page
@@ -48,26 +56,38 @@ app.get("/compose", (req, res) => {
 	res.render("compose");
 });
 app.post("/compose", (req, res) => {
-	const newPost: Post = {
-		title: req.body.postTitle,
-		text: req.body.postText,
-	};
-	postsMap.set(postTitleToURL(newPost.title), newPost);
-	// posts.push(newPost);
-	console.log(postsMap);
-
-	res.redirect("/");
+	const newDocumentId = new mongoose.Types.ObjectId();
+	Post.create(
+		{
+			_id: newDocumentId,
+			title: req.body.postTitle,
+			text: req.body.postText,
+		},
+		(error, result) => {
+			if (error) {
+				console.log(error);
+			} else {
+				console.log(result);
+				res.redirect("/");
+			}
+		}
+	);
 });
 //Posts routing
 app.get("/posts/:postID", (req, res) => {
-	console.log(req.params.postID);
-	if (postsMap.has(req.params.postID)) {
-		res.render("post", { post: postsMap.get(req.params.postID) });
-	} else {
-		res.render("error404");
-	}
+	console.log(req.params.postID); //receive post ID from url parameters
+	const postId = _.replace(req.params.postID, /\s/g, "");
+	Post.findOne({ _id: postId }, (error: CallbackError, result: Post) => {
+		if (error) {
+			console.log(error);
+		} else {
+			console.log(result);
+			res.render("post", {
+				post: result,
+			});
+		}
+	});
 });
-//--------------------------------------
 // server listening on port 3000
 app.listen(3000, () => {
 	console.log("Server listening on port 3000");

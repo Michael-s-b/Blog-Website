@@ -2,3 +2,5 @@ node_modules
 tsconfig.json
 pnpm-lock.yaml
 .DS_Store
+secret.ts
+secret.js
